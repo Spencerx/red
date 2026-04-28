@@ -2486,7 +2486,7 @@ make-profilable make target-class [
 	
 	emit-close-catch: func [offset [integer!] level [integer!] global [logic!] callback? [logic!]][
 		if verbose >= 3 [print ">>>emitting CATCH epilog"]
-		offset: offset + locals-offset + 8 ;+ (level * 8) ;-- account for the 2 saved slots
+		offset: offset + locals-offset + ((level + 1) * 8) ;-- account for the 2 saved slots
 		if callback? [offset: offset + 12]			;-- account for ebx,esi,edi saving slots
 		
 		either offset > 127 [
