@@ -69,7 +69,7 @@ money: context [
 		S_END
 	]
 	
-	#define SWAP_ARGUMENTS [use [hold][hold: value1 value1: value2 value2: hold]]
+	#define SWAP_ARGUMENTS [use [hold [red-money!]][hold: value1 value1: value2 value2: hold]]
 	#define DISPATCH_SIGNS [switch collate-signs sign1 sign2]
 	#define MONEY_OVERFLOW [fire [TO_ERROR(script type-limit) datatype/push TYPE_MONEY]]
 	
