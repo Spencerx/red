@@ -1702,6 +1702,24 @@ system-dialect: make-profilable context [
 			]
 		]
 		
+		preprocess-types: func [spec [block!] /local p type t][
+			parse spec [
+				some [
+					p: word! type: block! (
+						t: type/1
+						case [
+							enum-type? t/1   [type/1/1: 'integer!]
+							not base-type? t [type/1: copy find-aliased t/1]
+						]
+					)
+				]
+			]
+			unless tail? p [
+				backtrack 'use
+				throw-error ["Invalid USE spec block:" p]
+			]
+		]
+		
 		encode-pointers: func [name specs [block!] /local list offset b][
 			list: emitter/encode-ptr-bitmap specs
 			if verbose > 5 [
@@ -2296,14 +2314,19 @@ system-dialect: make-profilable context [
 				backtrack 'use
 				throw-error "USE can only be used from inside a function's body"
 			]
+			spec: copy/deep spec
+			preprocess-types spec
+			expand-func-specs spec
+			clear-docstrings spec
 			
 			use-init:   tail locals-init
 			use-locals: tail locals
 			use-stack:  tail emitter/stack
 			
-			unless find locals /local [append locals /local]
+			unless find locals /local [use-locals: tail append locals /local]
 			append locals spec
-			size: emitter/calc-locals-offsets/only use-locals
+			
+			size: emitter/calc-locals-offsets/with back use-locals last emitter/stack
 			emitter/target/emit-reserve-stack slots: size / 4
 			func-locals-sz: func-locals-sz + size
 			

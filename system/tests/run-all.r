@@ -88,6 +88,7 @@ print ["This test started at" start-time]
   --run-test-file-quiet %source/units/case-test.reds
   --run-test-file-quiet %source/units/switch-test.reds
   --run-test-file-quiet %source/units/subroutine-test.reds
+  --run-test-file-quiet %source/units/use-test.reds
 ===end-group===
 
 ===start-group=== "Exceptions tests"

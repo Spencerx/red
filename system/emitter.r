@@ -940,9 +940,9 @@ emitter: make-profilable context [
 		clear subs
 	]
 
-	calc-locals-offsets: func [spec [block!] /only /local total var sz extra][
-		total: negate extra: target/locals-offset
-		while [not tail? spec: next spec][
+	calc-locals-offsets: func [spec [block!] /with base /local total var sz extra][
+		total: either with [extra: 0 base][negate extra: target/locals-offset]
+		while [not tail? spec: next spec][				;-- skips /local at head
 			var: spec/1
 			either block? spec/2 [
 				sz: max size-of? spec/2 target/stack-width	;-- type declared
@@ -950,7 +950,7 @@ emitter: make-profilable context [
 			][
 				sz: target/stack-slot-max				;-- type to be inferred
 			]
-			unless only [repend stack [var (total: total - sz)]] 		;-- store stack offsets
+			repend stack [var (total: total - sz)] 		;-- store stack offsets
 		]
 		(abs total) - extra
 	]
