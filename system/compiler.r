@@ -1720,6 +1720,46 @@ system-dialect: make-profilable context [
 			]
 		]
 		
+		preprocess-use: func [fname spec [block!] body [block!] /local rule p pos][
+			parse body rule: [
+				any [
+					p: 'use (
+						unless all [block? p/2 not empty? p/2][
+							pc: p
+							throw-error "USE requires a spec block as first argument"
+						]
+						unless block? p/3 [
+							pc: p
+							throw-error "USE requires a body block as second argument"
+						]
+						foreach [name type] p/2 [
+							if find spec name [
+								throw-error ["duplicate variable" mold name "definition in function" fname]
+							]
+							if any [
+								not block? type 
+								not parse type ['subroutine! | 'function! fun-rule | type-spec]
+							][
+								throw-error ["invalid type for variable" mold name "in USE spec" mold p/2 ", function" fname]
+							]
+						]
+						either pos: find spec /local [
+							either pos: find/tail/last pos block! [
+								insert pos p/2
+							][
+								append spec p/2
+							]
+						][
+							append spec /local
+							append spec p/2
+						]
+					) skip								;-- skip variables block
+					| block! :p into rule
+					| skip
+				]
+			]
+		]
+		
 		encode-pointers: func [name specs [block!] /local list offset b][
 			list: emitter/encode-ptr-bitmap specs
 			if verbose > 5 [
@@ -1750,7 +1790,10 @@ system-dialect: make-profilable context [
 			if ns-path [add-ns-symbol pc/-1]
 			if ns-path [name: ns-prefix name]
 			check-func-name name
-			expand-func-specs specs: pc/2
+			
+			unless block? pc/3 [throw-error ["function" name "requires a body block!"]]
+			preprocess-use name specs: pc/2 pc/3
+			expand-func-specs specs
 			check-specs name specs
 			specs: copy specs
 			clear-docstrings specs
@@ -2300,46 +2343,16 @@ system-dialect: make-profilable context [
 			value
 		]
 		
-		comp-use: has [spec use-init use-locals use-stack size slots][
+		
+		comp-use: does [
 			pc: next pc
-			unless all [block? spec: pc/1 not empty? spec][
-				backtrack 'use
-				throw-error "USE requires a spec block as first argument"
-			]
-			unless block? pc/2 [
-				backtrack 'use
-				throw-error "USE requires a body block as second argument"
-			]
 			unless locals [
 				backtrack 'use
 				throw-error "USE can only be used from inside a function's body"
 			]
-			spec: copy/deep spec
-			preprocess-types spec
-			expand-func-specs spec
-			clear-docstrings spec
-			
-			use-init:   tail locals-init
-			use-locals: tail locals
-			use-stack:  tail emitter/stack
-			
-			unless find locals /local [use-locals: tail append locals /local]
-			append locals spec
-			
-			size: emitter/calc-locals-offsets/with back use-locals last emitter/stack
-			emitter/target/emit-reserve-stack slots: size / 4
-			func-locals-sz: func-locals-sz + size
-			
 			pc: next pc
 			fetch-into/root pc/1 [comp-dialect]
 			pc: next pc
-			
-			func-locals-sz: func-locals-sz - size
-			emitter/target/emit-release-stack slots
-			
-			clear use-init
-			clear use-locals
-			clear use-stack
 			last-type: none-type
 			none
 		]
