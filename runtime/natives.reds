@@ -778,15 +778,16 @@ natives: context [
 			blk/head: 0										;-- head changed by reduce/into
 			stack/set-last as red-value! buffer-blk 		;-- provide the modified-head buffer to form*
 		]
-
-		if TYPE_OF(arg) <> TYPE_STRING [actions/form* -1]
 		
 		str: as red-string! stack/arguments
+		either TYPE_OF(str) = TYPE_STRING [NORMALIZE_SERIES_HEAD_ALT(str)][actions/form* -1]
 		assert any [
 			TYPE_OF(str) = TYPE_STRING
 			TYPE_OF(str) = TYPE_SYMBOL						;-- symbol! and string! structs are overlapping
 		]
+		
 		dyn-print/red-print str lf?
+		
 		if block? [											;-- restore the buffer head & clean up what was printed
 			block/rs-clear buffer-blk 
 			buffer-blk/head: oldhd			
