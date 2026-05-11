@@ -590,8 +590,7 @@ Red [
 			]
 		]
 
-		fx560 [a [b c d]]
-		s560: ""
+		fx560 [a [b c d]] s560: ""
 		--assert equal? "01:a,01:b,1:c,1:d,]]" s560
 		unset [fx560 s560]
 
