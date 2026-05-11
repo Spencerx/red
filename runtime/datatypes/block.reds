@@ -1824,6 +1824,8 @@ block: context [
 
 		blk1: as red-block! stack/arguments
 		blk2: blk1 + 1
+		NORMALIZE_ANY_BLOCK_HEAD_ALT(blk1)
+		if op <> OP_UNIQUE [NORMALIZE_ANY_BLOCK_HEAD_ALT(blk2)]
 		len: rs-length? blk1
 		if op = OP_UNION [len: len + rs-length? blk2]
 		if zero? len [len: 1]
@@ -1851,7 +1853,7 @@ block: context [
 					head: hs/head
 					hs/table
 				][
-					if all [blk? hash <> null] [_hashtable/destroy hash]
+					if all [blk? hash <> null][_hashtable/destroy hash]
 					blk?: yes
 					head: 0
 					_hashtable/init rs-length? blk2 blk2 HASH_TABLE_HASH 1

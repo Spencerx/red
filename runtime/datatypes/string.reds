@@ -3025,6 +3025,8 @@ string: context [
 
 		ser1: as red-series! stack/arguments
 		ser2: ser1 + 1
+		NORMALIZE_SERIES_HEAD_ALT(ser1)
+		if op <> OP_UNIQUE [NORMALIZE_SERIES_HEAD_ALT(ser2)]
 		len: _series/get-length ser1 no
 		if op = OP_UNION [len: len + _series/get-length ser2 no]
 		new: as red-series! rs-make-at stack/push* len
