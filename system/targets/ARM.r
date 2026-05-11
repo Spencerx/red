@@ -747,14 +747,14 @@ make-profilable make target-class [
 		emit-i32 to-bin8 idx
 	]
 	
-	emit-load-local: func [opcode [binary!] offset [integer!] /float][
+	emit-load-local: func [opcode [binary!] offset [integer!] /float /alt][
 		if negative? offset [
 			opcode: copy opcode
 			opcode/2: #"^(7F)" and opcode/2			;-- clear bit 23 (U)
 		]
 		if float [offset: offset / 4]
 		offset: to-12-bit abs offset
-		;if alt [opcode: opcode or #{00001000}]		;-- use r1 instead of r0 
+		if alt [opcode: opcode or #{00001000}]		;-- use r1 instead of r0 
 		emit-i32 opcode or offset
 	]
 	
@@ -859,6 +859,7 @@ make-profilable make target-class [
 	emit-move-alt: does [emit-i32 #{e1a01000}]		;-- MOV r1, r0
 
 	emit-swap-regs: func [/alt][
+		if verbose >= 3 [print ">>>emitting SWAP"]
 		either alt [
 			emit-i32 #{e1a0c002}					;-- MOV r12, r2
 			emit-i32 #{e1a02000}					;-- MOV r2, r0
@@ -1521,15 +1522,20 @@ make-profilable make target-class [
 					]
 				][
 					either offset: emitter/local-offset? value [
-						emit-load-local #{e3000000} abs offset	;-- MOV r0, offset
-						emit-i32 either negative? offset [
-							#{e04b0000}				;-- SUB r0, fp, r0
+						either alt [
+							emit-load-local/alt #{e3000000} abs offset	;-- MOV r1, offset
 						][
-							#{e08b0000}				;-- ADD r0, fp, r0
+							emit-load-local #{e3000000} abs offset		;-- MOV r0, offset
+						]
+						alt: to-logic alt
+						emit-i32 either negative? offset [
+							pick [#{e04b1001} #{e04b0000}] alt ;-- SUB r0|r1, fp, r0|r1
+						][
+							pick [#{e08b1001} #{e08b0000}] alt ;-- ADD r0|r1, fp, r0|r1
 						]
 					][
 						pools/collect/spec 0 original
-						if PIC? [emit-i32 #{e0800009}]	;-- ADD r0, sb
+						if PIC? [emit-i32 either alt [#{e0811009}][#{e0800009}]] ;-- ADD r0|r1, sb
 					]
 				]
 			]
