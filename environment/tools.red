@@ -650,7 +650,7 @@ system/tools: context [
 		()
 	]
 	
-	set 'trace function [
+	set 'trace func [
 		"Runs argument code and prints an evaluation trace; also turns on/off tracing"
 		code [any-type!] "Code to trace or tracing mode (logic!)"
 		/raw   "Switch to raw interpreter events tracing (incompatible with other modes)"
