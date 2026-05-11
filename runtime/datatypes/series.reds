@@ -565,6 +565,7 @@ _series: context [
 			cnt		[integer!]
 			rehash?	[logic!]
 	][
+		NORMALIZE_SERIES_HEAD_ALT(ser)
 		cnt: 1
 		if OPTION?(dup-arg) [
 			int: as red-integer! dup-arg

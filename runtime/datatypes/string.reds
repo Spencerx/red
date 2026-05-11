@@ -182,6 +182,7 @@ string: context [
 			s	[series!]
 	][
 		s: GET_BUFFER(str)
+		NORMALIZE_ANY_STRING_HEAD(str)
 		(as byte-ptr! s/offset) + (str/head << (log-b GET_UNIT(s)))
 	]
 

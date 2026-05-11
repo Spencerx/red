@@ -1185,6 +1185,7 @@ binary: context [
 		
 		;-- Precalculating extra space needed --
 		s: GET_BUFFER(bin)
+		NORMALIZE_ANY_STRING_HEAD(bin)
 		len: as-integer s/tail - s/offset
 		tail?: any [append? len = bin/head]
 		chk?: ownership/check as red-value! bin words/_append value len part

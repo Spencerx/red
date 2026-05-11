@@ -628,6 +628,49 @@ Red/System [
 	] actions/get-action-ptr value ACT_COMPARE
 ]
 
+#define NORMALIZE_ANY_BLOCK_HEAD(_ser _s) [
+	#if debug? = yes [use [_type [integer!]][_type: TYPE_OF(_ser)  assert ANY_SERIES?(_type)]]
+	if _s/tail < (_s/offset + _ser/head) [
+		_ser/head: (as-integer _s/tail - _s/offset) >> size? int-ptr!
+	]
+]
+
+#define NORMALIZE_ANY_BLOCK_HEAD_ALT(_ser) [
+	#if debug? = yes [use [_type [integer!]][_type: TYPE_OF(_ser)  assert ANY_SERIES?(_type)]]
+	use [_s [series!]][
+		_s: GET_BUFFER(_ser)
+		if _s/tail < (_s/offset + _ser/head) [
+			_ser/head: (as-integer _s/tail - _s/offset) >> size? int-ptr!
+		]
+	]
+]
+
+#define NORMALIZE_ANY_STRING_HEAD(_ser) [
+	#if debug? = yes [use [_type [integer!]][_type: TYPE_OF(_ser)  assert ANY_SERIES?(_type)]]
+	if (as byte-ptr! s/tail) < ((as byte-ptr! s/offset) + (_ser/head << log-b GET_UNIT(s))) [
+		_ser/head: (as-integer s/tail - s/offset) >> log-b GET_UNIT(s)
+	]
+]
+
+#define NORMALIZE_SERIES_HEAD_ALT(_ser) [
+	#if debug? = yes [use [_type [integer!]][_type: TYPE_OF(_ser)  assert ANY_SERIES?(_type)]]
+	use [_s [series!]][
+		_s: GET_BUFFER(_ser)
+		if (as byte-ptr! _s/tail) < ((as byte-ptr! _s/offset) + (_ser/head << log-b GET_UNIT(_s))) [
+			_ser/head: (as-integer _s/tail - _s/offset) >> log-b GET_UNIT(_s)
+		]
+	]
+]
+
+#define ASSERT_NOT_PAST_TAIL(_ser) [
+	#if debug? = yes [
+		use [_s [series!]][
+			_s: GET_BUFFER(_ser)
+			assert (as byte-ptr! _s/tail) >= ((as byte-ptr! _s/offset) + (_ser/head << log-b GET_UNIT(_s)))
+		]
+	]
+]
+
 #if debug? = yes [
 	#define dump4	[dump-hex4 as int-ptr!]
 	#define dump1	[dump-hex  as byte-ptr!]

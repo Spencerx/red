@@ -977,6 +977,7 @@ vector: context [
 		#if debug? = yes [if verbose > 0 [print-line "vector/insert"]]
 
 		s: GET_BUFFER(vec)
+		NORMALIZE_ANY_STRING_HEAD(vec)
 		unit: GET_UNIT(s)
 		len: (as-integer s/tail - s/offset) >> (log-b GET_UNIT(s))
 		tail?: any [append? len = vec/head]

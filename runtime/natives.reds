@@ -419,8 +419,13 @@ natives: context [
 		stack/unwind-last
 	]
 	
-	func*: func [check? [logic!] /local flags [integer!]][
+	func*: func [check? [logic!] /local flags [integer!] spec body [red-block!]][
 		#typecheck func
+		spec: as red-block! stack/arguments
+		body: as red-block! stack/arguments + 1
+		NORMALIZE_SERIES_HEAD_ALT(spec)
+		NORMALIZE_SERIES_HEAD_ALT(body)
+		
 		flags: _function/validate as red-block! stack/arguments
 		_function/push 
 			as red-block! stack/arguments
@@ -437,7 +442,9 @@ natives: context [
 		/local spec [red-block!]
 	][
 		#typecheck function
-		spec: block/clone as red-block! stack/arguments no no	;-- copy it before modifying it
+		spec: as red-block! stack/arguments
+		NORMALIZE_SERIES_HEAD_ALT(spec)
+		spec: block/clone spec no no					;-- copy it before modifying it
 		copy-cell as red-value! spec stack/arguments
 		_function/collect-words	spec as red-block! stack/arguments + 1
 		func* check?
@@ -452,10 +459,12 @@ natives: context [
 	
 	has*: func [
 		check? [logic!]
-		/local blk [red-block!]
+		/local spec blk [red-block!]
 	][
 		#typecheck has
-		blk: block/clone as red-block! stack/arguments no no
+		spec: as red-block! stack/arguments
+		NORMALIZE_SERIES_HEAD_ALT(spec)
+		blk: block/clone spec no no
 		blk: as red-block! copy-cell as red-value! blk stack/arguments
 		block/insert-value blk as red-value! refinements/local no no
 		func* check?
@@ -580,14 +589,16 @@ natives: context [
 		if next > 0 [slot: _context/get as red-word! stack/arguments + next]
 		
 		do-block: [
+			blk: as red-block! arg
+			NORMALIZE_SERIES_HEAD_ALT(blk)
 			if expand? > 0 [
 				job: #get system/build/config
 				stack/mark-native words/_anon
-				#call [preprocessor/expand as red-block! arg job]
+				#call [preprocessor/expand blk job]
 				stack/unwind
 			]
 			either negative? next [
-				interpreter/eval as red-block! arg yes
+				interpreter/eval blk yes
 			][
 				stack/keep
 				blk: as red-block! stack/push arg
@@ -3029,6 +3040,7 @@ natives: context [
 		offset: 0
 		len: -1
 		bin: as red-binary! stack/arguments
+		NORMALIZE_SERIES_HEAD_ALT(bin)
 		type: TYPE_OF(bin)
 		arg: stack/arguments + part
 		fun: either trace < 0 [null][stack/arguments + trace]
@@ -3042,11 +3054,13 @@ natives: context [
 				TYPE_BINARY [
 					if type <> TYPE_BINARY [fire [TO_ERROR(script not-same-type)]]
 					bin2: as red-binary! arg
+					NORMALIZE_SERIES_HEAD_ALT(bin2)
 					len: bin2/head - bin/head
 				]
 				TYPE_STRING [
 					if type <> TYPE_STRING [fire [TO_ERROR(script not-same-type)]]
 					str: as red-string! arg
+					NORMALIZE_SERIES_HEAD_ALT(str)
 					len: str/head - bin/head
 				]
 				default [0]

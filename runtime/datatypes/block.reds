@@ -48,7 +48,7 @@ block: context [
 			s	[series!]
 	][
 		s: GET_BUFFER(blk)
-		assert s/tail >= (s/offset + blk/head)
+		NORMALIZE_ANY_BLOCK_HEAD(blk s)
 		s/offset + blk/head
 	]
 	

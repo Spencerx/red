@@ -20,15 +20,17 @@ actions: context [
 		if part > -1 [
 			part-arg: stack/arguments + part
 			ser1: as red-series! stack/arguments + 1
+			NORMALIZE_SERIES_HEAD_ALT(ser1)
 			
 			part: either TYPE_OF(part-arg) = TYPE_INTEGER [
 				int: as red-integer! part-arg
 				int/value
 			][
 				ser2: as red-series! stack/arguments + part
-				unless all [TYPE_OF(ser2) = TYPE_OF(ser1) ser2/node = ser1/node][
+				unless all [TYPE_OF(ser2) = TYPE_OF(ser1) ser2/node = ser1/node TYPE_OF(ser1) <> TYPE_PORT][
 					ERR_INVALID_REFINEMENT_ARG(refinements/_part ser2)
 				]
+				NORMALIZE_SERIES_HEAD_ALT(ser2)
 				ser2/head - ser1/head
 			]
 			if part <= 0 [
@@ -1153,14 +1155,16 @@ actions: context [
 		only  [integer!]
 		dup   [integer!]
 		/local
-			ser1 ser2 [red-series!]
+			ser ser1 ser2 [red-series!]
 			part-arg  [red-value!]
 			int		  [red-integer!]
 			cnt	p0	  [integer!]
 	][
+		ser: as red-series! stack/arguments
+		if TYPE_OF(ser) <> TYPE_PORT [NORMALIZE_SERIES_HEAD_ALT(ser)]
 		PROCESS_PART_DUP_OPTIONS
 		insert
-			as red-series! stack/arguments
+			ser
 			stack/arguments + 1
 			part
 			as logic! only + 1

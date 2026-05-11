@@ -1248,6 +1248,7 @@ _hashtable: context [
 		either any [type >= HASH_TABLE_NODE_KEY blk = null][
 			h/blk: alloc-cells size
 		][
+			ASSERT_NOT_PAST_TAIL(blk)
 			h/blk: blk/node
 			if type = HASH_TABLE_HASH [
 				hash: as red-hash! stack/push* ;@@ push on stack to mark it properly, especially `h/chains`
