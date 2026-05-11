@@ -1720,7 +1720,8 @@ system-dialect: make-profilable context [
 			]
 		]
 		
-		preprocess-use: func [fname spec [block!] body [block!] /local rule p pos][
+		preprocess-use: func [fname spec [block!] body [block!] /local rule p pos locs value][
+			clear locs: []
 			parse body rule: [
 				any [
 					p: 'use (
@@ -1742,20 +1743,30 @@ system-dialect: make-profilable context [
 							][
 								throw-error ["invalid type for variable" mold name "in USE spec" mold p/2 ", function" fname]
 							]
-						]
-						either pos: find spec /local [
-							either pos: find/tail/last pos block! [
-								insert pos p/2
+							either all [
+								value: select locs name
+								value <> type
 							][
-								append spec p/2
+								throw-error ["conflicting variable" mold name "in USE spec block"]
+							][
+								unless value [repend locs [name type]]
 							]
-						][
-							append spec /local
-							append spec p/2
 						]
 					) skip								;-- skip variables block
 					| block! :p into rule
 					| skip
+				]
+			]
+			unless empty? locs [
+				either pos: find spec /local [
+					either pos: find/tail/last pos block! [
+						insert pos locs
+					][
+						append spec locs
+					]
+				][
+					append spec /local
+					append spec locs
 				]
 			]
 		]
