@@ -1007,6 +1007,7 @@ change-size: func [
 		adj		[handle!]
 		pt		[red-point2D!]
 		sx sy	[integer!]
+		color	[red-tuple!]
 ][
 	GET_PAIR_XY_INT(size sx sy)
 	SET_PAIR_SIZE_FLAG(widget size)
@@ -1038,6 +1039,12 @@ change-size: func [
 		]
 		gtk_widget_set_size_request widget sx sy
 		gtk_widget_queue_resize widget
+		;-- A transparent base draws into an offscreen surface sized at widget
+		;-- creation time. Resize the surface so the drawing isn't clipped.
+		if type = base [
+			color: as red-tuple! values + FACE_OBJ_COLOR
+			set-buffer widget sx sy color
+		]
 
 		if type = panel [
 			label: GET-CAPTION(widget)
@@ -1792,14 +1799,24 @@ set-buffer: func [
 	y		[integer!]
 	color	[red-tuple!]
 	/local
-		buf [handle!]
+		buf		[handle!]
+		scale	[integer!]
+		fs		[float!]
 ][
 	unless transparent-base? color [exit]
 
 	buf: GET-BASE-BUFFER(widget)
 	if buf <> null [cairo_surface_destroy buf]
 
-	buf: cairo_image_surface_create CAIRO_FORMAT_ARGB32 x y
+	;-- Match the widget's device scale so HiDPI displays don't end up
+	;-- upscaling a logical-pixel buffer (which looks blurry).
+	scale: gtk_widget_get_scale_factor widget
+	if scale < 1 [scale: 1]
+	buf: cairo_image_surface_create CAIRO_FORMAT_ARGB32 x * scale y * scale
+	if scale > 1 [
+		fs: as-float scale
+		cairo_surface_set_device_scale buf fs fs
+	]
 	SET-BASE-BUFFER(widget buf)
 ]
 

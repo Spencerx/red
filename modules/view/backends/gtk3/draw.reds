@@ -2194,6 +2194,11 @@ OS-draw-state-push: func [
 ][
 	cairo_save dc/cr
 	if dc/font-attrs <> null [pango_attr_list_ref dc/font-attrs]
+	;-- The byte-copy below aliases the gradient pattern handles between dc
+	;-- and the saved state. Bump the user-ref so inner-block destroys (e.g.
+	;-- via OS-draw-fill-pen) don't leave the saved snapshot dangling.
+	if dc/grad-pen/pattern-on?   [cairo_pattern_reference dc/grad-pen/pattern]
+	if dc/grad-brush/pattern-on? [cairo_pattern_reference dc/grad-brush/pattern]
 	copy-memory as byte-ptr! state (as byte-ptr! dc) + 4 size? draw-state!
 ]
 
@@ -2204,6 +2209,11 @@ OS-draw-state-pop: func [
 	cairo_restore dc/cr
 	if dc/pen-pattern <> null [free as byte-ptr! dc/pen-pattern]
 	if dc/font-attrs <> null [pango_attr_list_unref dc/font-attrs]
+	;-- Release any pattern the inner block left in dc before the memcpy
+	;-- overwrites the pointer with the saved one (whose extra ref was taken
+	;-- in OS-draw-state-push).
+	if dc/grad-pen/pattern-on?   [cairo_pattern_destroy dc/grad-pen/pattern]
+	if dc/grad-brush/pattern-on? [cairo_pattern_destroy dc/grad-brush/pattern]
 	copy-memory (as byte-ptr! dc) + 4 as byte-ptr! state size? draw-state!
 	if dc/font-opts <> null [cairo_font_options_set_antialias dc/font-opts state/font-antialias]
 ]
@@ -2322,6 +2332,7 @@ OS-set-clip: func [
 		cairo_new_path dc/cr
 		ctx-matrix-adapt dc saved
 		cairo_append_path dc/cr path
+		cairo_path_destroy path
 	]
 	cairo_clip cr
 	ctx-matrix-unadapt dc saved
@@ -2353,6 +2364,7 @@ OS-draw-shape-endpath: func [
 	cairo_new_path dc/cr
 	ctx-matrix-adapt dc saved
 	cairo_append_path dc/cr path
+	cairo_path_destroy path
 	do-draw-path dc
 	ctx-matrix-unadapt dc saved
 	true
