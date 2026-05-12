@@ -285,13 +285,13 @@ collector: context [
 		]
 		assert src/used = 0
 		src/locked?: yes								;-- prevents new allocations, schedules for freeing at end of GC pass
-		stats/nodes-cycles: stats/nodes-cycles + 1
 	]
 	
 	do-node-cycle: func [
 		/local
 			frame [node-frame!]
 			mask !mask avail [integer!]
+			done? [logic!]
 	][
 		assert nodes-list/count = 0
 		!mask: 1 << (prefs/nodes-gc-trigger + 1) - 1	;-- create mask for checking frame usage across last 32 GC passes
@@ -301,6 +301,7 @@ collector: context [
 		if null? frame [exit]							;-- all the frames are full
 		memory/n-active: frame							;-- initialize dst
 
+		done?: no
 		avail: calc-free-slots							;-- nb of potential free destination slots (including the ones from frames to be compacted)
 		frame: memory/n-tail
 		until [
@@ -314,10 +315,12 @@ collector: context [
 				if refs = null [refs: _hashtable/rs-init refs-size]
 				avail: avail - nodes-per-frame
 				compact-node frame refs
+				done?: yes
 			]
 			frame: frame/prev
 			frame = null
 		]
+		if done? [stats/nodes-cycles: stats/nodes-cycles + 1] ;-- increment count if at least one frame was compacted.
 	]
 	
 	refresh-array: func [p [node!] end [node!] /local new [node!]][
