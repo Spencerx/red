@@ -1848,12 +1848,12 @@ Inside a function body, it is possible to create arbitrary local contexts, with 
  
  use [<spec>][<code>]
 
- <spec> : list of local variables followed by optional type specification
+ <spec> : list of local variables followed by type specification
  <code> : body block of code
  
-This creates a local context where new variables are available in the body block. Those variables are freed on exiting the body block. Using a variable name already existing in the function specification will result in a compilation error.
+This creates a local context where new variables are available in the body block. Those variables are discarded on exiting the body block. Using a variable name already existing in the function specification will result in a compilation error.
 
-Local variables listed in spec block follow the same syntax as local variables in function spec block. Variable names can be followed by a type specification, or let the compiler infer the type (except for structs by value, which must have a declared type). Local contexts created by USE can also be freely nested (as long as no variable names from outer local contexts are re-used).
+Local variables listed in spec block follow the same syntax as local variables in function spec block. Variable names must be followed by a type specification. Subroutines cannot be defined at that level. Local contexts created by USE can also be freely nested (as long as no variable names from outer local contexts are re-used).
 
 Examples:
 
@@ -1862,9 +1862,9 @@ Examples:
  		foo [integer!]
  ][
  	foo: 1
- 	use [bar][
+ 	use [bar [integer!]][
  		bar: 2
- 		use [baz][
+ 		use [baz [integer!]][
  			baz: 3
  			print foo + bar + baz		;-- will output 6
  		]
@@ -1879,7 +1879,7 @@ Examples:
  ][
  	bar: 3
  	if cond [
- 		use [var][
+ 		use [var [integer!]][
  			var: 10						;-- 'var is a local variable here
  			bar: var + bar				;-- will return 14
  		]
