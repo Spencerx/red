@@ -1626,6 +1626,10 @@ GPtrArray!: alias struct! [
 		gtk_widget_queue_draw: "gtk_widget_queue_draw" [
 			widget		[handle!]
 		]
+		gtk_widget_get_scale_factor: "gtk_widget_get_scale_factor" [
+			widget		[handle!]
+			return:		[integer!]
+		]
 		gtk_widget_queue_draw_area: "gtk_widget_queue_draw_area" [
 			widget		[handle!]
 			x			[integer!]
@@ -3036,6 +3040,9 @@ GPtrArray!: alias struct! [
 			cr			[handle!]
 			return:		[handle!]
 		]
+		cairo_path_destroy: "cairo_path_destroy" [
+			path		[handle!]
+		]
 		cairo_append_path: "cairo_append_path" [
 			cr			[handle!]
 			path		[handle!]
@@ -3224,6 +3231,10 @@ GPtrArray!: alias struct! [
 		cairo_pattern_destroy: "cairo_pattern_destroy" [
 			pattern		[handle!]
 		]
+		cairo_pattern_reference: "cairo_pattern_reference" [
+			pattern		[handle!]
+			return:		[handle!]
+		]
 		cairo_pattern_create_for_surface: "cairo_pattern_create_for_surface" [
 			surface		[handle!]
 			return:		[handle!]
@@ -3336,6 +3347,11 @@ GPtrArray!: alias struct! [
 		]
 		cairo_surface_destroy: "cairo_surface_destroy" [
 			surf		[handle!]
+		]
+		cairo_surface_set_device_scale: "cairo_surface_set_device_scale" [
+			surf		[handle!]
+			x_scale		[float!]
+			y_scale		[float!]
 		]
 		cairo_image_surface_get_data: "cairo_image_surface_get_data" [
 			surf		[handle!]
