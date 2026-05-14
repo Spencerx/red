@@ -501,6 +501,12 @@ free-handles: func [
 	]
 
 	if sym = window [
+		;-- #5696: explicitly clear our markers BEFORE destroy. GObject only
+		;-- runs g_datalist_clear in finalize, not in dispose, so if anyone
+		;-- holds an extra ref (do-events / OS-show-window pin) the qdata
+		;-- would otherwise survive the destroy and confuse the alive checks.
+		g_object_set_qdata widget red-face-id null
+		g_object_set_qdata widget in-loop-id null
 		gtk_widget_destroy widget
 		;-- TBD: don't know why widget has been destroyed, but still need do event loop
 		;-- otherwise the window can't be closed
@@ -1808,10 +1814,19 @@ OS-show-window: func [
 	gtk_widget_show win
 	n: 0
 	window-ready?: no
+	g_object_ref win								;-- #5696: pin win across the wait-for-ready
+													;-- loop. A timer with on-time can fire during
+													;-- this poll, run unview, and finalize the
+													;-- window memory. Without this ref, every probe
+													;-- of `win` after that point is a use-after-free.
 	until [		;-- process some events to make the window ready
 		do-events yes
 		n: n + 1
-		any [window-ready? n = 10000]
+		any [
+			window-ready?
+			n = 10000
+			null? g_object_get_qdata win red-face-id	;-- bail if window was destroyed during the poll
+		]
 	]
 	window-ready?: no
 	;-- Apply the window's `selected` facet now that all children have
@@ -1820,7 +1835,10 @@ OS-show-window: func [
 	;-- widget, but that caused issue #5672. Going through
 	;-- set-selected-focus is also the path that obeys the deferred
 	;-- g_idle_add guard, so it's safe even if invoked during an event.
-	set-selected-focus win
+	if null <> g_object_get_qdata win red-face-id [		;-- skip if window was destroyed during the poll
+		set-selected-focus win
+	]
+	g_object_unref win								;-- release pin; win may finalize now
 ]
 
 set-buffer: func [

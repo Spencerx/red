@@ -850,7 +850,12 @@ do-events: func [
 	win: find-last-window
 	if null? win [return no]
 	SET-IN-LOOP(win win)
-
+	g_object_ref win									;-- #5696: pin win so a destroy triggered from
+														;-- within the loop (e.g. unview from on-time)
+														;-- cannot finalize the memory we probe below.
+														;-- IN-LOOP qdata is cleared during dispose, so the
+														;-- check after the iteration still detects "logically
+														;-- destroyed" correctly.
 	msg?: any [not no-wait? gtk_events_pending]
 	until [
 		gtk_main_iteration_do not no-wait?
@@ -864,6 +869,7 @@ do-events: func [
 		]
 		no-wait?
 	]
+	g_object_unref win									;-- release the pin; win may finalize now
 	msg?
 ]
 
