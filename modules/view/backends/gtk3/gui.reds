@@ -1338,6 +1338,23 @@ set-hint-text: func [
 	]
 ]
 
+deferred-grab-focus: func [
+	[cdecl]
+	self	[handle!]
+	return:	[logic!]
+][
+	;-- g_object_ref pinned the widget at scheduling time; if it has since
+	;-- been unmapped or destroyed, skip the grab and just drop our ref.
+	if all [
+		not null? self
+		gtk_widget_is_visible self
+	][
+		gtk_widget_grab_focus self
+	]
+	g_object_unref as int-ptr! self
+	false											;-- G_SOURCE_REMOVE
+]
+
 set-selected-focus: func [
 	widget		[handle!]
 	/local
@@ -1350,7 +1367,14 @@ set-selected-focus: func [
 		face: as red-object! values + FACE_OBJ_SELECTED
 		if TYPE_OF(face) = TYPE_OBJECT [
 			handle: face-handle? face
-			unless null? handle [gtk_widget_grab_focus handle]
+			unless null? handle [
+				;-- Defer the grab to an idle callback. Calling
+				;-- gtk_widget_grab_focus synchronously from inside a
+				;-- focus-in/out signal handler re-enters GTK's focus
+				;-- state machine and crashes (issue #5672).
+				g_object_ref as int-ptr! handle
+				g_idle_add as-integer :deferred-grab-focus as int-ptr! handle
+			]
 		]
 	]
 ]
@@ -1790,7 +1814,13 @@ OS-show-window: func [
 		any [window-ready? n = 10000]
 	]
 	window-ready?: no
-	;set-selected-focus win
+	;-- Apply the window's `selected` facet now that all children have
+	;-- been realized. Previously this was done implicitly by
+	;-- connect-focus-events grabbing focus on every new focusable
+	;-- widget, but that caused issue #5672. Going through
+	;-- set-selected-focus is also the path that obeys the deferred
+	;-- g_idle_add guard, so it's safe even if invoked during an event.
+	set-selected-focus win
 ]
 
 set-buffer: func [
@@ -2248,6 +2278,7 @@ OS-update-view: func [
 
 	int: int + 1
 	flags: int/value
+	int/value: 0										;-- clear flags first, so a re-entrant update-view (eg. triggered by on-unfocus inside change-pane) doesn't re-process the same flags
 
 	if flags and FACET_FLAG_OFFSET <> 0 [
 		change-offset widget values as red-pair! values + FACE_OBJ_OFFSET type
@@ -2324,8 +2355,6 @@ OS-update-view: func [
 
 	gtk_widget_queue_draw widget
 	;]
-
-	int/value: 0										;-- reset flags
 ]
 
 unlink-sub-obj: func [

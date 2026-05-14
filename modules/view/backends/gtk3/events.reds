@@ -990,11 +990,19 @@ connect-focus-events: func [
 		sym = rich-text
 		sym = field
 		sym = area
-		sym = base	
+		sym = base
 	][
 		gtk_widget_set_can_focus widget yes
 		gtk_widget_set_focus_on_click widget yes
-		gtk_widget_grab_focus widget
+		;-- Note: we deliberately do NOT call gtk_widget_grab_focus here.
+		;-- Doing so makes every newly-created focusable widget steal focus
+		;-- from whichever widget currently has it, which mismatches the
+		;-- Windows backend's semantics and causes issue #5672: when a
+		;-- new face is appended dynamically, the previously-focused face
+		;-- gets an unfocus event, and any handler that touches
+		;-- window/selected re-enters GTK's focus state machine from
+		;-- inside the focus-out signal — corrupting it. Initial focus is
+		;-- now applied via set-selected-focus in OS-show-window.
 		gtk_widget_add_events widget GDK_FOCUS_CHANGE_MASK
 		gobj_signal_connect(evbox "focus-in-event" :focus-in-event widget)
 		gobj_signal_connect(evbox "focus-out-event" :focus-out-event widget)
