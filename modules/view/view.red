@@ -1381,16 +1381,9 @@ insert-event-func 'reactors [
 	if find [change enter unfocus] event/type [
 		face: event/face
 		facet: switch/default face/type [
-			scroller	['data]
-			slider		['data]
-			check		['data]
-			radio		['data]
-			tab-panel	['data]
-			field		['text]
-			area		['text]
-			drop-down	['text]
-			text-list	['selected]
-			drop-list	['selected]
+			scroller slider check radio	tab-panel toggle ['data]
+			field area drop-down ['text]
+			text-list drop-list	 ['selected]
 		][none]
 		
 		if facet [system/reactivity/check/only face facet]
