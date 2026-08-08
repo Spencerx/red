@@ -1356,6 +1356,19 @@ Red [
 	--test-- "str-sk40" --assert not parse	""			[to ["a"]]
 	--test-- "str-sk41" --assert not parse	""			[to [#"a"]]
 
+	--test-- "str-sk42" --assert parse 		"A" 		[thru #"a"]
+	--test-- "str-sk43" --assert parse 		"A" 		[thru #"A"]
+	--test-- "str-sk44" --assert parse 		"b" 		[thru #"b"]
+	--test-- "str-sk45" --assert parse 		"b" 		[thru #"B"]
+	--test-- "str-sk46" --assert not parse/case "A" 	[thru #"a"]
+	--test-- "str-sk47" --assert parse/case "A" 		[thru #"A"]
+	--test-- "str-sk48" --assert parse/case "b" 		[thru #"b"]
+	--test-- "str-sk49" --assert not parse/case "b" 	[thru #"B"]
+	
+	--test-- "str-sk50" --assert not parse 	"cccc" 		[to #"a"]
+	--test-- "str-sk51" --assert not parse 	"cccc" 		[to #"A"]
+	--test-- "str-sk52" --assert not parse/case "cccc"	[to #"a"]
+	--test-- "str-sk53" --assert not parse/case "cccc"	[to #"A"]
 	
 ===end-group===
 
